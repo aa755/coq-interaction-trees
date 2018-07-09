@@ -168,8 +168,25 @@ Section Eff.
     | eq_delay : forall a b, eff_eq _ a b ->
                         Eff_eqF eff_eq (delay a) (delay b).
 
-    Definition Eff_eq_ind := GFPC Eff_eqF.
+    Definition transport  {A B:Type} {F} (a:F A) (p:A=B) : F B. destruct p. exact a.
+    Defined.
 
+    Definition cast {A B:Type}  (a: A) (p:A=B) : B. destruct p. exact a.
+    Defined.
+
+    Definition Eff_eqFf (eff_eq : forall T, Eff T -> Eff T -> Prop) {T} (a b: Eff T): Prop :=
+      match getEff a, getEff b with
+      | retF x, retF y => x=y
+      | (@interactF _ _ T1 e1 k1), (@interactF _ _ T2 e2 k2) =>
+        {p : T1=T2 | {pe: e2 = transport e1 p |  (forall x, eff_eq _ (k1 x) (k2 (cast x p))) } }
+      | (delayF a), (delayF b) =>  eff_eq _ a b
+      | _,_ => False
+      end.
+
+    Lemma Eff_eqFf_iff (eff_eq : forall T, Eff T -> Eff T -> Prop) {T} (a b: Eff T):
+      Eff_eqF eff_eq a b <-> Eff_eqFf eff_eq a b.
+    Admitted.
+    
     Lemma Eff_eqF_mon: monotone3 Eff_eqF.
     Proof.
       red. intros.
@@ -177,7 +194,9 @@ Section Eff.
     Qed.
     Hint Resolve Eff_eqF_mon : paco.
 
-   CoInductive Eff_eq_coind  {T}
+    Definition Eff_eq_ind := GFPC Eff_eqF.
+
+    CoInductive Eff_eq_coind  {T}
      : Eff T -> Eff T -> Prop :=
    | cstep: forall t1 t2, Eff_eqF (@Eff_eq_coind) t1 t2
                      -> Eff_eq_coind t1 t2.
@@ -199,6 +218,10 @@ if the greatest fixpoint is reached by interating over the natural numbers  *)
 -  subst. constructor. clear H.
    intros ?. apply ind_implies_coind.
    intros ?. specialize (Hi (S n)).
+   hnf in Hi.
+   apply Eff_eqFf_iff in Hi. hnf in Hi.
+   destruct Hi.  unfold transport in *.
+   unfold cast in *. 
    inversion Hi.  subst.
    apply inj_pair2 in H1. (* uses the UIP axiom! *)
    apply inj_pair2 in H2.
