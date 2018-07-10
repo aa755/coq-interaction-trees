@@ -194,7 +194,7 @@ Section Eff.
     Qed.
     Hint Resolve Eff_eqF_mon : paco.
 
-    Definition Eff_eq_ind := GFPC Eff_eqF.
+    Definition Eff_eq_ind := GFPC Eff_eqFf.
 
     CoInductive Eff_eq_coind  {T}
      : Eff T -> Eff T -> Prop :=
@@ -213,21 +213,15 @@ if the greatest fixpoint is reached by interating over the natural numbers  *)
    intros.
    constructor.
    pose proof (Hi (1)) as H1i.
-   inversion H1i.
--  subst. constructor.
--  subst. constructor. clear H.
-   intros ?. apply ind_implies_coind.
-   intros ?. specialize (Hi (S n)).
+   destruct t1, t2.
+   destruct e, e0; simpl in *; try firstorder.
+-  subst. apply  Eff_eqFf_iff ; auto.
+-  subst. apply Eff_eqFf_iff.
+   simpl in *.  hnf. 
+   simpl.
+   exists eq_refl. exists eq_refl.
+   intros. apply ind_implies_coind.   intros n. specialize (Hi (S n)). 
    hnf in Hi.
-   apply Eff_eqFf_iff in Hi. hnf in Hi.
-   destruct Hi.  unfold transport in *.
-   unfold cast in *. 
-   inversion Hi.  subst.
-   apply inj_pair2 in H1. (* uses the UIP axiom! *)
-   apply inj_pair2 in H2.
-   apply inj_pair2 in H3.
-   apply inj_pair2 in H4.
-   subst. clear H3. hnf. apply H0.
 - subst. 
    subst. constructor.  clear H.
    apply ind_implies_coind.
