@@ -178,7 +178,7 @@ Section Eff.
       match getEff a, getEff b with
       | retF x, retF y => x=y
       | (@interactF _ _ T1 e1 k1), (@interactF _ _ T2 e2 k2) =>
-        {p : T1=T2 | {pe: e2 = transport e1 p |  (forall x, eff_eq _ (k1 x) (k2 (cast x p))) } }
+        {p : T1=T2 |  forall p, e2 = transport e1 p /\ (forall x, eff_eq _ (k1 x) (k2 (cast x p)))  }
       | (delayF a), (delayF b) =>  eff_eq _ a b
       | _,_ => False
       end.
@@ -201,7 +201,6 @@ Section Eff.
    | cstep: forall t1 t2, Eff_eqF (@Eff_eq_coind) t1 t2
                      -> Eff_eq_coind t1 t2.
 
-   Require Import Coq.Logic.Eqdep. (* imports the UIP axiom *)
    
  (* the other direction is guaranteed to hold. this direction only holds
 if the greatest fixpoint is reached by interating over the natural numbers  *)
@@ -218,15 +217,19 @@ if the greatest fixpoint is reached by interating over the natural numbers  *)
 -  subst. apply  Eff_eqFf_iff ; auto.
 -  subst. apply Eff_eqFf_iff.
    simpl in *.  hnf. 
-   simpl.
-   exists eq_refl. exists eq_refl.
+   simpl. 
+   exists eq_refl.  intros pp.
+   specialize (p pp). destruct p.
+   rewrite <-H. split; auto. 
    intros. apply ind_implies_coind.   intros n. specialize (Hi (S n)). 
-   hnf in Hi.
-- subst. 
-   subst. constructor.  clear H.
+   hnf in Hi.  destruct Hi. 
+   specialize (a pp). destruct a.
+   apply H2. 
+- subst.  constructor.  clear H1i.
    apply ind_implies_coind.
    intros ?. specialize (Hi (S n)).
-   inversion Hi.  subst. eauto.
+   hnf in Hi.  subst. eauto.
+   Fail idtac.
  Qed.
  
     Definition Eff_eq : forall {T}, Eff T -> Eff T -> Prop :=
